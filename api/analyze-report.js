@@ -1,4 +1,4 @@
-import { createOpenAIClient } from '../lib/openai.js';
+import { createGeminiClient, reportAnalysisSchema } from '../lib/gemini.js';
 import { buildFallbackAnalysis, extractReportContent } from '../lib/report-parser.js';
 import { createServiceClient, requireUser } from '../lib/supabase.js';
 
@@ -91,59 +91,29 @@ export default async function handler(req, res) {
 }
 
 async function generateAiAnalysis(fileName, extracted) {
-  const client = createOpenAIClient();
-  const systemPrompt = `You analyze medical reports and return strict JSON only. Return this shape: {"critical": string[], "moderate": string[], "elevated": string[], "metrics": [{"metric_name": string, "value": string, "unit": string, "severity": "critical"|"moderate"|"elevated", "summary": string, "tip": string}]}. Keep tips practical and concise. Do not claim diagnosis. If uncertain, say so plainly.`;
+  const client = createGeminiClient();
+  const prompt = [
+    'You analyze medical reports and return strict JSON only.',
+    'Do not diagnose. Keep tips practical and concise. If uncertain, say so plainly.',
+    `File name: ${fileName}`,
+    extracted.text ? `Report text:\n${extracted.text.slice(0, 12000)}` : 'No extractable text was available.'
+  ].join('\n\n');
 
-  const content = [
-    { type: 'text', text: `File name: ${fileName}` },
-    { type: 'text', text: extracted.text ? `Report text:\n${extracted.text.slice(0, 12000)}` : 'No extractable text was available.' }
-  ];
-
+  const parts = [{ text: prompt }];
   if (extracted.imageDataUrl) {
-    content.push({ type: 'image_url', image_url: { url: extracted.imageDataUrl } });
+    const [, mimeType = 'image/jpeg', base64 = ''] = extracted.imageDataUrl.match(/^data:(.*?);base64,(.*)$/) || [];
+    parts.push({ inlineData: { mimeType, data: base64 } });
   }
 
-  const response = await client.responses.create({
-    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-    input: [
-      { role: 'system', content: [{ type: 'text', text: systemPrompt }] },
-      { role: 'user', content }
-    ],
-    temperature: 0.2,
-    text: {
-      format: {
-        type: 'json_schema',
-        name: 'medical_report_analysis',
-        strict: true,
-        schema: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            critical: { type: 'array', items: { type: 'string' } },
-            moderate: { type: 'array', items: { type: 'string' } },
-            elevated: { type: 'array', items: { type: 'string' } },
-            metrics: {
-              type: 'array',
-              items: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  metric_name: { type: 'string' },
-                  value: { type: 'string' },
-                  unit: { type: 'string' },
-                  severity: { type: 'string', enum: ['critical', 'moderate', 'elevated'] },
-                  summary: { type: 'string' },
-                  tip: { type: 'string' }
-                },
-                required: ['metric_name', 'value', 'unit', 'severity', 'summary', 'tip']
-              }
-            }
-          },
-          required: ['critical', 'moderate', 'elevated', 'metrics']
-        }
-      }
+  const response = await client.models.generateContent({
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    contents: [{ role: 'user', parts }],
+    config: {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+      responseSchema: reportAnalysisSchema
     }
   });
 
-  return JSON.parse(response.output_text);
+  return JSON.parse(response.text);
 }

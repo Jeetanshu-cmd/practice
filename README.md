@@ -7,7 +7,7 @@ Professional medical report dashboard with upload analysis, report history, user
 - Frontend: static HTML, CSS, JS
 - Hosting/API: Vercel
 - Auth/DB/Storage: Supabase
-- AI: OpenAI
+- AI: Google Gemini
 
 ## Features
 
@@ -26,8 +26,9 @@ Add these to Vercel:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL` (optional, defaults to `gpt-4.1-mini`)
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (optional, defaults to `gemini-2.5-flash`)
+- `GEMINI_CHAT_MODEL` (optional, defaults to `gemini-2.5-flash`)
 
 ## Supabase Setup
 
