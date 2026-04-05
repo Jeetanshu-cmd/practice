@@ -90,6 +90,8 @@ function cacheElements() {
     profileAvatar: document.getElementById('profileAvatar'),
     profileName: document.getElementById('profileName'),
     profileEmail: document.getElementById('profileEmail'),
+    profileQuickBtn: document.getElementById('profileQuickBtn'),
+    authPanel: document.getElementById('authPanel'),
     themeToggle: document.getElementById('themeToggle'),
     themeToggleIcon: document.getElementById('themeToggleIcon'),
     reportInput: document.getElementById('reportInput'),
@@ -127,6 +129,15 @@ function bindEvents() {
 
   els.themeToggle.addEventListener('click', () => {
     applyTheme(state.theme === 'light' ? 'dark' : 'light');
+  });
+
+  els.profileQuickBtn.addEventListener('click', () => {
+    els.authPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target = state.session ? els.profileName : els.authEmail;
+    if (target) {
+      target.setAttribute('tabindex', '-1');
+      target.focus();
+    }
   });
 
   els.uploadTriggerBtn.addEventListener('click', () => {
@@ -542,7 +553,6 @@ function renderMetrics(metrics, target) {
             <span class="metric-value">${escapeHtml(String(metric.value ?? '--'))} ${escapeHtml(metric.unit || '')}</span>
           </header>
           <div class="metric-footer">
-            <div class="metric-meta">Hover or focus for a practical balancing tip tailored to this marker.</div>
             <span class="status-pill">${escapeHtml(readableStatus(severity))}</span>
           </div>
         </article>

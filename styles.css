@@ -150,7 +150,6 @@ svg {
 .metric-item,
 .prompt-chip,
 .chat-bubble,
-.ribbon-card,
 .history-meta-block,
 .chart-stat-card,
 .modal-highlight {
@@ -473,8 +472,7 @@ h3 {
 }
 
 .hero-meta-grid,
-.hero-aside-grid,
-.dashboard-ribbon {
+.hero-aside-grid {
   display: grid;
   gap: 14px;
 }
@@ -497,7 +495,6 @@ h3 {
 
 .hero-meta-label,
 .hero-aside-grid span,
-.ribbon-label,
 .history-file-type {
   display: inline-flex;
   align-items: center;
@@ -510,8 +507,7 @@ h3 {
 }
 
 .hero-meta-card strong,
-.hero-aside-grid strong,
-.ribbon-card strong {
+.hero-aside-grid strong {
   display: block;
   margin-bottom: 6px;
 }
@@ -545,37 +541,6 @@ h3 {
   line-height: 1.7;
 }
 
-.dashboard-ribbon {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 24px;
-}
-
-.ribbon-card {
-  display: flex;
-  gap: 16px;
-  padding: 18px 20px;
-  border-radius: 24px;
-  border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent), var(--surface);
-  box-shadow: var(--shadow-md);
-}
-
-.ribbon-label {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 0;
-  border-radius: 14px;
-  justify-content: center;
-  background: var(--surface-alt);
-  color: var(--primary);
-  flex: none;
-}
-
-.ribbon-card p {
-  margin: 0;
-  color: var(--ink-soft);
-}
-
 .section-aside-note {
   max-width: 280px;
   padding: 14px 16px;
@@ -593,7 +558,7 @@ h3 {
 .dashboard-main-stack,
 .dashboard-side-stack {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
 .side-story-card {
@@ -615,19 +580,23 @@ h3 {
 
 .analytics-card,
 .summary-card {
-  min-height: 340px;
+  min-height: 320px;
+}
+
+.summary-card {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
 .chart-stat-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .chart-stat-card {
-  padding: 14px 16px;
-  border-radius: 18px;
+  padding: 12px 14px;
+  border-radius: 16px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent), var(--surface-muted);
 }
@@ -675,15 +644,15 @@ h3 {
 
 .metric-list {
   display: grid;
-  gap: 14px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .metric-item {
   position: relative;
   overflow: hidden;
-  padding: 18px 18px 16px;
-  border-radius: 24px;
+  padding: 16px 16px 14px;
+  border-radius: 20px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent), var(--surface-muted);
 }
@@ -725,13 +694,13 @@ h3 {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .metric-label {
   display: inline-block;
-  margin-bottom: 8px;
-  font-size: 0.76rem;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -739,15 +708,16 @@ h3 {
 }
 
 .metric-value {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   white-space: nowrap;
 }
 
 .metric-footer {
-  margin-top: 10px;
+  margin-top: 8px;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .metric-tip {
@@ -776,7 +746,6 @@ h3 {
 .metric-item:hover,
 .history-row:hover,
 .prompt-chip:hover,
-.ribbon-card:hover,
 .chart-stat-card:hover,
 .modal-highlight:hover {
   transform: translateY(-2px);
@@ -786,34 +755,35 @@ h3 {
 .finding-sections {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .finding-block {
-  padding: 18px;
-  border-radius: 24px;
+  padding: 14px;
+  border-radius: 18px;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(255,255,255,0.07), transparent), var(--surface-muted);
+  background: color-mix(in srgb, var(--surface-muted) 92%, transparent);
 }
 
 .finding-block header {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .finding-block p {
   margin: 4px 0 0;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
 }
 
 .finding-block ul {
   margin: 0;
   padding-left: 18px;
   color: var(--ink-soft);
-  line-height: 1.65;
+  line-height: 1.55;
+  font-size: 0.93rem;
 }
 
 .finding-dot {
@@ -1336,7 +1306,6 @@ h3 {
   }
 
   .hero-meta-grid,
-  .dashboard-ribbon,
   .hero-aside-grid,
   .finding-sections,
   .history-hero-strip,
