@@ -13,7 +13,7 @@ Professional medical report dashboard with upload analysis, report history, user
 
 - Top taskbar with Dashboard, History, Dr.AI, and theme toggle
 - Professional light/dark theme
-- Email/password and Google auth via Supabase
+- Email/password auth via Supabase
 - Report upload for PDF, images, TXT, DOC, and DOCX
 - AI-powered report analysis with saved history
 - Metrics cards with hover tips
@@ -33,8 +33,7 @@ Add these to Vercel:
 ## Supabase Setup
 
 1. Run `supabase/schema.sql` in the Supabase SQL editor.
-2. Enable Email and Google auth providers.
-3. Set the Google OAuth redirect URL to your Vercel app origin.
+2. Enable Email auth provider.
 
 ## Local Development
 

@@ -48,7 +48,6 @@ const state = {
   selectedReport: null,
   chatSessionId: null,
   chatMessages: [],
-  authMode: 'oauth',
   theme: localStorage.getItem('medinsight-theme') || 'light'
 };
 
@@ -81,13 +80,12 @@ function cacheElements() {
     authHelperText: document.getElementById('authHelperText'),
     signedOutState: document.getElementById('signedOutState'),
     signedInState: document.getElementById('signedInState'),
-    toggleAuthModeBtn: document.getElementById('toggleAuthModeBtn'),
-    googleSignInBtn: document.getElementById('googleSignInBtn'),
     signOutBtn: document.getElementById('signOutBtn'),
     refreshDataBtn: document.getElementById('refreshDataBtn'),
     authForm: document.getElementById('authForm'),
     authEmail: document.getElementById('authEmail'),
     authPassword: document.getElementById('authPassword'),
+    passwordToggleBtn: document.getElementById('passwordToggleBtn'),
     authSubmitBtn: document.getElementById('authSubmitBtn'),
     profileAvatar: document.getElementById('profileAvatar'),
     profileName: document.getElementById('profileName'),
@@ -97,6 +95,7 @@ function cacheElements() {
     reportInput: document.getElementById('reportInput'),
     uploadTriggerBtn: document.getElementById('uploadTriggerBtn'),
     analysisStatusPill: document.getElementById('analysisStatusPill'),
+    chartSummary: document.getElementById('chartSummary'),
     metricList: document.getElementById('metricList'),
     criticalFindings: document.getElementById('criticalFindings'),
     moderateFindings: document.getElementById('moderateFindings'),
@@ -146,10 +145,9 @@ function bindEvents() {
     event.target.value = '';
   });
 
-  els.toggleAuthModeBtn.addEventListener('click', toggleAuthMode);
-  els.googleSignInBtn.addEventListener('click', signInWithGoogle);
   els.signOutBtn.addEventListener('click', signOut);
   els.refreshDataBtn.addEventListener('click', refreshAuthenticatedData);
+  els.passwordToggleBtn.addEventListener('click', togglePasswordVisibility);
   els.authForm.addEventListener('submit', submitAuthForm);
   els.chatForm.addEventListener('submit', submitChatMessage);
   els.closeModalBtn.addEventListener('click', closeDetailModal);
@@ -224,35 +222,18 @@ async function updateAuthUi() {
     els.profileAvatar.textContent = initials(displayName);
   }
 
-  const usingEmailMode = state.authMode === 'email';
-  els.authForm.classList.toggle('hidden', !usingEmailMode || connected);
-  els.googleSignInBtn.classList.toggle('hidden', usingEmailMode || connected);
-  els.toggleAuthModeBtn.classList.toggle('hidden', connected);
-  els.toggleAuthModeBtn.textContent = usingEmailMode ? 'Back to Google sign-in' : 'Use email instead';
-  els.authSubmitBtn.textContent = usingEmailMode ? 'Sign in / Sign up' : 'Sign in';
+  els.authForm.classList.toggle('hidden', connected);
+  els.authSubmitBtn.textContent = 'Sign in / Sign up';
+  els.passwordToggleBtn.textContent = 'Show';
+  els.passwordToggleBtn.setAttribute('aria-label', 'Show password');
+  els.authPassword.type = 'password';
 }
 
-function toggleAuthMode() {
-  state.authMode = state.authMode === 'oauth' ? 'email' : 'oauth';
-  updateAuthUi();
-}
-
-async function signInWithGoogle() {
-  if (!state.supabase) {
-    showToast('Supabase config is missing.');
-    return;
-  }
-
-  const { error } = await state.supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin
-    }
-  });
-
-  if (error) {
-    showToast(error.message);
-  }
+function togglePasswordVisibility() {
+  const showing = els.authPassword.type === 'text';
+  els.authPassword.type = showing ? 'password' : 'text';
+  els.passwordToggleBtn.textContent = showing ? 'Show' : 'Hide';
+  els.passwordToggleBtn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 }
 
 async function submitAuthForm(event) {
@@ -267,18 +248,23 @@ async function submitAuthForm(event) {
   const password = els.authPassword.value;
   if (!email || !password) return;
 
+  setButtonBusy(els.authSubmitBtn, true, 'Working...');
+
   const signInAttempt = await state.supabase.auth.signInWithPassword({ email, password });
   if (!signInAttempt.error) {
+    setButtonBusy(els.authSubmitBtn, false, 'Sign in / Sign up');
     showToast('Signed in successfully.');
     return;
   }
 
   const signUpAttempt = await state.supabase.auth.signUp({ email, password });
   if (signUpAttempt.error) {
+    setButtonBusy(els.authSubmitBtn, false, 'Sign in / Sign up');
     showToast(signUpAttempt.error.message);
     return;
   }
 
+  setButtonBusy(els.authSubmitBtn, false, 'Sign in / Sign up');
   showToast('Account created. Check your email if confirmation is enabled.');
 }
 
@@ -374,6 +360,7 @@ async function uploadReport(file) {
   }
 
   try {
+    setButtonBusy(els.uploadTriggerBtn, true, 'Uploading...');
     els.analysisStatusPill.textContent = 'Uploading';
     const extension = (file.name.split('.').pop() || 'bin').toLowerCase();
     const objectPath = `${state.user.id}/${Date.now()}-${sanitizeFileName(file.name)}`;
@@ -423,27 +410,46 @@ async function uploadReport(file) {
     console.error(error);
     els.analysisStatusPill.textContent = 'Upload failed';
     showToast(error.message || 'Upload failed.');
+  } finally {
+    setButtonBusy(els.uploadTriggerBtn, false, 'Upload report');
   }
 }
 
 function renderHistory(reports) {
   if (!reports.length) {
-    els.historyTable.innerHTML = `<div class="empty-state">No reports uploaded yet. Your report history will appear here with timestamps and quick detail access.</div>`;
+    els.historyTable.innerHTML = `
+      <div class="empty-state">
+        <strong>No reports uploaded yet</strong>
+        <p>Your archive will appear here with timestamps, status, and quick detail access once you upload the first report.</p>
+      </div>
+    `;
     return;
   }
 
   els.historyTable.innerHTML = reports
     .map((report) => {
       const uploaded = new Date(report.uploaded_at);
+      const status = readableStatus(report.analysis_status || 'processing');
+      const extension = String(report.file_type || '').toUpperCase();
       return `
         <article class="history-row">
           <div class="history-file">
+            <div class="history-file-topline">
+              <span class="history-file-type">${escapeHtml(extension || 'FILE')}</span>
+              <span class="history-status history-status-${escapeHtml((report.analysis_status || 'processing').toLowerCase())}">${escapeHtml(status)}</span>
+            </div>
             <strong>${escapeHtml(report.file_name)}</strong>
-            <span>Status: ${escapeHtml(readableStatus(report.analysis_status || 'processing'))}</span>
+            <span>Stored for longitudinal review and detailed re-checking.</span>
           </div>
-          <div class="history-meta">${uploaded.toLocaleDateString()}</div>
-          <div class="history-meta">${uploaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-          <button class="secondary-btn history-eye" type="button" data-open-report="${report.id}">Eye</button>
+          <div class="history-meta-block">
+            <span class="history-meta-label">Date</span>
+            <div class="history-meta">${uploaded.toLocaleDateString()}</div>
+          </div>
+          <div class="history-meta-block">
+            <span class="history-meta-label">Time</span>
+            <div class="history-meta">${uploaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+          <button class="secondary-btn history-eye" type="button" data-open-report="${report.id}">View</button>
         </article>
       `;
     })
@@ -510,25 +516,35 @@ function renderList(element, items) {
 
 function renderMetrics(metrics, target) {
   if (!metrics?.length) {
-    target.innerHTML = `<div class="empty-state">Metric cards will appear here after report analysis.</div>`;
+    target.innerHTML = `
+      <div class="empty-state">
+        <strong>No extracted markers yet</strong>
+        <p>Metric cards will appear here after analysis identifies abnormal or noteworthy values.</p>
+      </div>
+    `;
     return;
   }
 
   target.innerHTML = metrics
     .map((metric) => {
       const severity = metric.severity || 'moderate';
+      const metricName = metric.metric_name || metric.name;
       return `
         <article class="metric-item" tabindex="0" data-severity="${escapeHtml(severity)}">
           <div class="metric-tip">${escapeHtml(metric.tip || 'No balancing tip available for this metric yet.')}</div>
+          <span class="metric-band metric-band-${escapeHtml(severity)}"></span>
           <header>
             <div>
-              <strong>${escapeHtml(metric.metric_name || metric.name)}</strong>
+              <span class="metric-label">${escapeHtml(readableStatus(severity))}</span>
+              <strong>${escapeHtml(metricName)}</strong>
               <span class="muted-text">${escapeHtml(metric.summary || 'Clinical marker')}</span>
             </div>
-            <span class="status-pill">${escapeHtml(readableStatus(severity))}</span>
+            <span class="metric-value">${escapeHtml(String(metric.value ?? '--'))} ${escapeHtml(metric.unit || '')}</span>
           </header>
-          <div class="metric-value">${escapeHtml(String(metric.value ?? '--'))} ${escapeHtml(metric.unit || '')}</div>
-          <div class="metric-meta">Hover for a practical balancing tip tailored to this marker.</div>
+          <div class="metric-footer">
+            <div class="metric-meta">Hover or focus for a practical balancing tip tailored to this marker.</div>
+            <span class="status-pill">${escapeHtml(readableStatus(severity))}</span>
+          </div>
         </article>
       `;
     })
@@ -565,9 +581,19 @@ function renderChart(metrics) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260,
+        easing: 'easeOutQuart'
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
+          displayColors: false,
+          backgroundColor: cssVar('--ink'),
+          titleColor: cssVar('--surface-strong'),
+          bodyColor: cssVar('--surface-strong'),
+          padding: 12,
+          cornerRadius: 14,
           callbacks: {
             label(context) {
               if (!chartMetrics.length) return 'Upload a report to visualize severity.';
@@ -579,24 +605,32 @@ function renderChart(metrics) {
       },
       scales: {
         x: {
-          ticks: { color: cssVar('--text-soft') },
-          grid: { display: false }
+          ticks: { color: cssVar('--ink-soft') },
+          grid: { display: false },
+          border: { display: false }
         },
         y: {
           beginAtZero: true,
           suggestedMax: 3.5,
           ticks: {
             stepSize: 1,
-            color: cssVar('--text-soft'),
+            color: cssVar('--ink-soft'),
             callback(value) {
               return value === 0 ? '' : value;
             }
           },
-          grid: { color: colorWithAlpha(cssVar('--border-strong'), 0.45) }
+          grid: { color: colorWithAlpha(cssVar('--line-strong'), 0.45) },
+          border: { display: false }
         }
       }
     }
   });
+
+  els.chartSummary.textContent = chartMetrics.length
+    ? `Chart summary: ${chartMetrics
+        .map((metric) => `${metric.metric_name || metric.name} is ${readableStatus(metric.severity)}`)
+        .join('; ')}.`
+    : 'Chart summary: no analyzed markers yet. Upload a report to populate the visualization.';
 }
 
 async function loadChatSession() {
@@ -637,7 +671,14 @@ async function loadChatSession() {
 
 function renderStarterPrompts() {
   els.promptList.innerHTML = starterPrompts
-    .map((prompt) => `<button class="prompt-chip" type="button">${escapeHtml(prompt)}</button>`)
+    .map(
+      (prompt, index) => `
+        <button class="prompt-chip" type="button">
+          <span class="prompt-index">0${index + 1}</span>
+          <span>${escapeHtml(prompt)}</span>
+        </button>
+      `
+    )
     .join('');
 
   els.promptList.querySelectorAll('.prompt-chip').forEach((button) => {
@@ -652,7 +693,12 @@ function renderChatThread(messages) {
   els.chatThread.innerHTML = messages
     .map(
       (message) =>
-        `<article class="chat-bubble ${escapeHtml(message.role)}">${escapeHtml(message.content)}</article>`
+        `
+          <article class="chat-message ${escapeHtml(message.role)}">
+            <span class="chat-speaker">${message.role === 'user' ? 'You' : 'Dr.AI'}</span>
+            <div class="chat-bubble ${escapeHtml(message.role)}">${escapeHtml(message.content)}</div>
+          </article>
+        `
     )
     .join('');
   els.chatThread.scrollTop = els.chatThread.scrollHeight;
@@ -671,6 +717,7 @@ async function submitChatMessage(event) {
   const optimistic = [...state.chatMessages, { role: 'user', content: message }];
   renderChatThread([...optimistic, { role: 'assistant', content: 'Thinking...' }]);
   els.chatInput.value = '';
+  setButtonBusy(els.chatSubmitBtn, true, 'Sending...');
 
   try {
     const response = await fetch('/api/chat', {
@@ -693,6 +740,8 @@ async function submitChatMessage(event) {
     console.error(error);
     showToast(error.message || 'Unable to send message.');
     renderChatThread(optimistic);
+  } finally {
+    setButtonBusy(els.chatSubmitBtn, false, 'Send');
   }
 }
 
@@ -703,6 +752,11 @@ function switchView(viewName) {
   document.querySelectorAll('.nav-btn[data-view-trigger]').forEach((button) => {
     button.classList.toggle('active', button.dataset.viewTrigger === viewName);
   });
+  const activeView = document.querySelector(`.view[data-view="${viewName}"] h1`);
+  if (activeView) {
+    activeView.setAttribute('tabindex', '-1');
+    activeView.focus();
+  }
 }
 
 function applyTheme(theme) {
@@ -710,6 +764,7 @@ function applyTheme(theme) {
   localStorage.setItem('medinsight-theme', theme);
   document.body.dataset.theme = theme;
   els.themeToggleIcon.textContent = theme === 'light' ? '☾' : '☀';
+  els.themeToggle.setAttribute('aria-label', theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
   if (state.chart) {
     renderChart(state.selectedReport?.metrics || []);
   }
@@ -731,13 +786,13 @@ function severityScore(severity = '') {
 function severityColor(severity = '') {
   switch (severity.toLowerCase()) {
     case 'critical':
-      return 'rgba(199, 76, 76, 0.75)';
+      return 'rgba(167, 73, 73, 0.8)';
     case 'elevated':
-      return 'rgba(190, 106, 51, 0.75)';
+      return 'rgba(179, 99, 57, 0.8)';
     case 'moderate':
-      return 'rgba(208, 138, 28, 0.75)';
+      return 'rgba(169, 117, 34, 0.8)';
     default:
-      return 'rgba(47, 111, 237, 0.55)';
+      return 'rgba(54, 95, 141, 0.58)';
   }
 }
 
@@ -802,4 +857,11 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => {
     els.toast.classList.remove('show');
   }, 3200);
+}
+
+function setButtonBusy(button, busy, label) {
+  button.disabled = busy;
+  button.dataset.label = button.dataset.label || button.textContent;
+  button.textContent = label || (busy ? 'Loading...' : button.dataset.label);
+  button.setAttribute('aria-busy', busy ? 'true' : 'false');
 }

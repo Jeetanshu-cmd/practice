@@ -19,38 +19,73 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to main content</a>
+
   <div class="app-shell">
     <header class="topbar">
       <button class="brand" type="button" data-view-trigger="dashboard" aria-label="Open dashboard">
-        <span class="brand-mark">M</span>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="3" y="3" width="42" height="42" rx="14"></rect>
+            <path d="M15 31V17h3.7l5.3 7.5 5.3-7.5H33v14h-3.5v-8.3l-4.7 6.5h-1.5l-4.8-6.5V31H15Z"></path>
+          </svg>
+        </span>
         <span>
           <strong>MedInsight</strong>
-          <small>Clinical clarity, thoughtfully presented</small>
+          <small>Interpretation workspace for modern diagnostics</small>
         </span>
       </button>
 
       <nav class="topbar-nav" aria-label="Main navigation">
         <button class="nav-btn active" type="button" data-view-trigger="dashboard">
-          <span class="nav-icon">▦</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M3 3h6v6H3V3Zm8 0h6v3h-6V3Zm0 5h6v9h-6V8ZM3 11h6v6H3v-6Z"/></svg>
+          </span>
           <span>Dashboard</span>
         </button>
         <button class="nav-btn" type="button" data-view-trigger="history">
-          <span class="nav-icon">◷</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 3a7 7 0 1 0 7 7h-2a5 5 0 1 1-1.46-3.54L11 9h6V3l-2.04 2.04A6.96 6.96 0 0 0 10 3Zm-.75 3.5h1.5v4l3 1.8-.75 1.23-3.75-2.28V6.5Z"/></svg>
+          </span>
           <span>History</span>
         </button>
         <button class="nav-btn" type="button" data-view-trigger="chat">
-          <span class="nav-icon">✦</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5c4.14 0 7.5 2.88 7.5 6.42 0 1.94-1.03 3.68-2.67 4.86L15.5 17l-3.3-1.64c-.7.16-1.44.24-2.2.24-4.14 0-7.5-2.88-7.5-6.42S5.86 2.5 10 2.5Zm-3 5.8h6v1.4H7V8.3Zm0 2.7h4.1v1.4H7V11Z"/></svg>
+          </span>
           <span>Dr.AI</span>
         </button>
         <button class="nav-btn icon-only" id="themeToggle" type="button" aria-label="Toggle theme">
-          <span class="nav-icon" id="themeToggleIcon">☾</span>
+          <span class="nav-icon" id="themeToggleIcon" aria-hidden="true">☾</span>
+          <span class="mobile-nav-label" aria-hidden="true">Theme</span>
           <span class="sr-only">Toggle theme</span>
         </button>
       </nav>
     </header>
 
-    <main class="layout">
+    <main class="layout" id="mainContent">
       <aside class="sidebar-card auth-panel" id="authPanel">
+        <div class="rail-intro">
+          <p class="eyebrow">Workspace</p>
+          <h2>One place for reports, trends, and follow-up questions.</h2>
+          <p class="muted-text">Built for clear reading instead of a robotic control-room look.</p>
+        </div>
+
+        <div class="rail-note-stack" aria-hidden="true">
+          <div class="rail-note">
+            <strong>Track</strong>
+            <span>Stored report history with exact upload time</span>
+          </div>
+          <div class="rail-note">
+            <strong>Interpret</strong>
+            <span>Critical, moderate, and elevated findings grouped cleanly</span>
+          </div>
+          <div class="rail-note">
+            <strong>Discuss</strong>
+            <span>Dr.AI helps turn confusing terminology into next questions</span>
+          </div>
+        </div>
+
         <div class="panel-head compact">
           <div>
             <p class="eyebrow">Account</p>
@@ -65,21 +100,22 @@
 
         <div id="signedOutState">
           <div class="auth-actions">
-            <button class="primary-btn wide" type="button" id="googleSignInBtn">Continue with Google</button>
-            <button class="secondary-btn wide" type="button" id="toggleAuthModeBtn">Use email instead</button>
+            <form class="auth-form auth-form-inline" id="authForm">
+              <label>
+                <span>Email</span>
+                <input id="authEmail" type="email" placeholder="doctor@hospital.com" autocomplete="email" required />
+              </label>
+              <label>
+                <span>Password</span>
+                <div class="password-field">
+                  <input id="authPassword" type="password" placeholder="Minimum 8 characters" minlength="8" autocomplete="current-password" required />
+                  <button class="ghost-btn password-toggle" id="passwordToggleBtn" type="button" aria-label="Show password">Show</button>
+                </div>
+              </label>
+              <p class="helper-text form-helper">Use your email and password to sign in, or the same form will create an account if one does not exist yet.</p>
+              <button class="primary-btn wide" type="submit" id="authSubmitBtn">Sign in / Sign up</button>
+            </form>
           </div>
-
-          <form class="auth-form hidden" id="authForm">
-            <label>
-              <span>Email</span>
-              <input id="authEmail" type="email" placeholder="doctor@hospital.com" required />
-            </label>
-            <label>
-              <span>Password</span>
-              <input id="authPassword" type="password" placeholder="Minimum 8 characters" minlength="8" required />
-            </label>
-            <button class="primary-btn wide" type="submit" id="authSubmitBtn">Sign in</button>
-          </form>
         </div>
 
         <div class="hidden" id="signedInState">
@@ -105,77 +141,175 @@
       <section class="content-column">
         <section class="view active" id="dashboardView" data-view="dashboard">
           <div class="hero-card">
-            <div>
+            <div class="hero-copyblock">
               <p class="eyebrow">Dashboard</p>
               <h1>MedInsight Dashboard</h1>
               <p class="hero-copy">Your latest medical report analysis at a glance</p>
+
+              <div class="hero-meta-grid" aria-hidden="true">
+                <article class="hero-meta-card">
+                  <span class="hero-meta-label">Reading style</span>
+                  <strong>Clinical summary</strong>
+                  <small>Structured for quick review before deeper inspection</small>
+                </article>
+                <article class="hero-meta-card">
+                  <span class="hero-meta-label">Supported files</span>
+                  <strong>PDF, images, docs</strong>
+                  <small>Upload pathology reports, lab snapshots, or exported notes</small>
+                </article>
+                <article class="hero-meta-card accent">
+                  <span class="hero-meta-label">Review flow</span>
+                  <strong>Upload, compare, ask</strong>
+                  <small>Move from findings to conversation without leaving the workspace</small>
+                </article>
+              </div>
             </div>
-            <div class="hero-actions">
-              <button class="primary-btn" id="uploadTriggerBtn" type="button">Upload report</button>
-              <input
-                id="reportInput"
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt"
-                hidden
-              />
+
+            <div class="hero-side-panel">
+              <div class="hero-side-head">
+                <span class="status-pill neutral">Private workspace</span>
+                <p class="hero-side-copy">Upload one new report to refresh the dashboard and append it to your history.</p>
+              </div>
+              <div class="hero-actions">
+                <button class="primary-btn" id="uploadTriggerBtn" type="button">Upload report</button>
+                <input
+                  id="reportInput"
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt"
+                  hidden
+                />
+              </div>
+              <div class="hero-aside-grid" aria-hidden="true">
+                <div>
+                  <span>Finding groups</span>
+                  <strong>3 priority lanes</strong>
+                </div>
+                <div>
+                  <span>Metric tips</span>
+                  <strong>Hover-assisted guidance</strong>
+                </div>
+              </div>
             </div>
           </div>
 
+          <section class="dashboard-ribbon" aria-label="Clinical workflow overview">
+            <article class="ribbon-card">
+              <span class="ribbon-label">01</span>
+              <div>
+                <strong>Upload a fresh report</strong>
+                <p>Bring in lab work, scans, or exported documents in one place.</p>
+              </div>
+            </article>
+            <article class="ribbon-card">
+              <span class="ribbon-label">02</span>
+              <div>
+                <strong>Review flagged markers</strong>
+                <p>Separate elevated patterns from urgent findings without scanning raw tables.</p>
+              </div>
+            </article>
+            <article class="ribbon-card">
+              <span class="ribbon-label">03</span>
+              <div>
+                <strong>Turn findings into questions</strong>
+                <p>Use Dr.AI to clarify terminology before your next appointment.</p>
+              </div>
+            </article>
+          </section>
+
           <div class="dashboard-grid">
-            <article class="card analytics-card">
-              <div class="panel-head">
-                <div>
-                  <p class="eyebrow">Analysis Graph</p>
-                  <h2>Latest report abnormality profile</h2>
+            <div class="dashboard-main-stack">
+              <article class="card analytics-card">
+                <div class="panel-head">
+                  <div>
+                    <p class="eyebrow">Analysis Graph</p>
+                    <h2>Latest report abnormality profile</h2>
+                    <p class="panel-copy">A quick severity snapshot of the latest extracted markers.</p>
+                  </div>
+                  <span class="status-pill" id="analysisStatusPill" aria-live="polite">Awaiting report</span>
                 </div>
-                <span class="status-pill" id="analysisStatusPill">Awaiting report</span>
-              </div>
-              <canvas id="analysisChart" aria-label="Report analysis chart"></canvas>
-            </article>
+                <div class="chart-stat-row" aria-hidden="true">
+                  <div class="chart-stat-card">
+                    <span>Trend lens</span>
+                    <strong>Severity-weighted markers</strong>
+                  </div>
+                  <div class="chart-stat-card">
+                    <span>Visual style</span>
+                    <strong>Accessible comparative bars</strong>
+                  </div>
+                  <div class="chart-stat-card">
+                    <span>Reading tip</span>
+                    <strong>Use with the findings below</strong>
+                  </div>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="analysisChart" aria-label="Report analysis chart"></canvas>
+                </div>
+                <p class="helper-text chart-summary" id="chartSummary">Upload a report to generate a chart summary for screen readers and quick scanning.</p>
+              </article>
 
-            <aside class="card metrics-card">
-              <div class="panel-head">
-                <div>
-                  <p class="eyebrow">Metrics</p>
-                  <h2>High, low, and moderate markers</h2>
+              <article class="card summary-card">
+                <div class="panel-head">
+                  <div>
+                    <p class="eyebrow">AI Analysis</p>
+                    <h2>Clinical summary</h2>
+                    <p class="panel-copy">Grouped findings help you separate urgent review from general follow-up.</p>
+                  </div>
+                  <button class="ghost-btn hidden" id="viewLatestDetailsBtn" type="button">Open details</button>
                 </div>
-              </div>
-              <div class="metric-list" id="metricList"></div>
+
+                <div class="finding-sections">
+                  <section class="finding-block critical">
+                    <header>
+                      <span class="finding-dot"></span>
+                      <div>
+                        <h3>Critical</h3>
+                        <p>Needs priority medical review</p>
+                      </div>
+                    </header>
+                    <ul id="criticalFindings"></ul>
+                  </section>
+                  <section class="finding-block moderate">
+                    <header>
+                      <span class="finding-dot"></span>
+                      <div>
+                        <h3>Moderate</h3>
+                        <p>Watch closely and discuss trends</p>
+                      </div>
+                    </header>
+                    <ul id="moderateFindings"></ul>
+                  </section>
+                  <section class="finding-block elevated">
+                    <header>
+                      <span class="finding-dot"></span>
+                      <div>
+                        <h3>Elevated</h3>
+                        <p>Above range but often manageable</p>
+                      </div>
+                    </header>
+                    <ul id="elevatedFindings"></ul>
+                  </section>
+                </div>
+              </article>
+            </div>
+
+            <aside class="dashboard-side-stack">
+              <article class="card side-story-card">
+                <p class="eyebrow">Review Lens</p>
+                <h2>Read the report like a clinician would brief a patient.</h2>
+                <p class="panel-copy">Markers, timing, and interpretation sit together so you do not have to jump between views.</p>
+              </article>
+
+              <aside class="card metrics-card">
+                <div class="panel-head">
+                  <div>
+                    <p class="eyebrow">Metrics</p>
+                    <h2>High, low, and moderate markers</h2>
+                    <p class="panel-copy">Review flagged elements and hover to reveal practical balancing tips.</p>
+                  </div>
+                </div>
+                <div class="metric-list" id="metricList"></div>
+              </aside>
             </aside>
-
-            <article class="card summary-card">
-              <div class="panel-head">
-                <div>
-                  <p class="eyebrow">AI Analysis</p>
-                  <h2>Clinical summary</h2>
-                </div>
-                <button class="ghost-btn hidden" id="viewLatestDetailsBtn" type="button">Open details</button>
-              </div>
-
-              <div class="finding-sections">
-                <section class="finding-block critical">
-                  <header>
-                    <span class="finding-dot"></span>
-                    <h3>Critical</h3>
-                  </header>
-                  <ul id="criticalFindings"></ul>
-                </section>
-                <section class="finding-block moderate">
-                  <header>
-                    <span class="finding-dot"></span>
-                    <h3>Moderate</h3>
-                  </header>
-                  <ul id="moderateFindings"></ul>
-                </section>
-                <section class="finding-block elevated">
-                  <header>
-                    <span class="finding-dot"></span>
-                    <h3>Elevated</h3>
-                  </header>
-                  <ul id="elevatedFindings"></ul>
-                </section>
-              </div>
-            </article>
           </div>
         </section>
 
@@ -186,9 +320,24 @@
               <h1>Past Reports</h1>
               <p class="hero-copy">Review earlier uploads, timestamps, and detailed findings.</p>
             </div>
+            <div class="section-aside-note">Chronological archive with one-click detail access.</div>
           </div>
 
           <div class="card table-card">
+            <div class="history-hero-strip" aria-hidden="true">
+              <div>
+                <span>Archive style</span>
+                <strong>Chronological</strong>
+              </div>
+              <div>
+                <span>Data shown</span>
+                <strong>Name, date, time, detail view</strong>
+              </div>
+              <div>
+                <span>Best use</span>
+                <strong>Compare uploads over time</strong>
+              </div>
+            </div>
             <div class="history-table" id="historyTable"></div>
           </div>
         </section>
@@ -202,6 +351,7 @@
                 Dr.AI can explain trends and answer doubts, but it is not a substitute for a licensed physician.
               </p>
             </div>
+            <div class="section-aside-note">Designed for clarification, not diagnosis.</div>
           </div>
 
           <div class="chat-layout">
@@ -212,6 +362,7 @@
                   <h2>Suggested questions</h2>
                 </div>
               </div>
+              <p class="panel-copy prompt-copy">Begin with common follow-up questions, then move into a freeform chat.</p>
               <div class="prompt-list" id="promptList"></div>
             </aside>
 
@@ -224,7 +375,8 @@
                 <span class="status-pill neutral">Medical education only</span>
               </div>
 
-              <div class="chat-thread" id="chatThread"></div>
+              <div class="chat-stage-label" aria-hidden="true">Conversation thread</div>
+              <div class="chat-thread" id="chatThread" aria-live="polite"></div>
 
               <form class="chat-form" id="chatForm">
                 <textarea
@@ -247,15 +399,23 @@
 
   <dialog class="detail-modal" id="reportDetailModal">
     <div class="modal-shell">
-      <div class="panel-head">
-        <div>
+      <div class="modal-topbar">
+        <div class="modal-title-block">
           <p class="eyebrow">Report details</p>
           <h2 id="modalReportTitle">Latest report</h2>
+          <p class="panel-copy modal-copy">A focused breakdown of the selected upload, ready for closer review.</p>
         </div>
         <button class="ghost-btn" type="button" id="closeModalBtn">Close</button>
       </div>
 
-      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-meta-wrap">
+        <div class="modal-meta" id="modalMeta"></div>
+        <div class="modal-highlight" aria-hidden="true">
+          <span>View mode</span>
+          <strong>Structured interpretation</strong>
+          <small>Designed to keep findings, metrics, and file access in one sheet.</small>
+        </div>
+      </div>
 
       <section>
         <h3 class="modal-subheading">Findings</h3>
@@ -295,7 +455,7 @@
     </div>
   </dialog>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
