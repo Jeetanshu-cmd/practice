@@ -1,931 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HealthPulse — Raw Data → Fake Insights</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedInsight</title>
+  <meta
+    name="description"
+    content="MedInsight helps patients upload reports, review medical insights, track history, and chat with Dr.AI."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --card: #16161f;
-      --border: #2a2a38;
-      --accent: #00e5a0;
-      --accent2: #7b61ff;
-      --accent3: #ff6b6b;
-      --accent4: #ffd166;
-      --text: #e8e8f0;
-      --muted: #6b6b88;
-      --font-head: 'Syne', sans-serif;
-      --font-mono: 'DM Mono', monospace;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font-head);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* GRID BG */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* NAV */
-    nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 40px;
-      background: rgba(10,10,15,0.85);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .logo {
-      font-size: 1.3rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-dot {
-      width: 8px; height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
-    }
-
-    .nav-tag {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      padding: 4px 12px;
-      border-radius: 100px;
-    }
-
-    /* HERO */
-    .hero {
-      position: relative;
-      z-index: 1;
-      padding: 80px 40px 50px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .hero-label {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--accent);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .hero-label::before {
-      content: '';
-      width: 24px; height: 1px;
-      background: var(--accent);
-    }
-
-    h1 {
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -2px;
-      margin-bottom: 16px;
-    }
-
-    h1 span { color: var(--accent); }
-
-    .hero-sub {
-      font-family: var(--font-mono);
-      color: var(--muted);
-      font-size: 0.95rem;
-      max-width: 480px;
-      line-height: 1.7;
-    }
-
-    /* UPLOAD ZONE */
-    .upload-section {
-      position: relative;
-      z-index: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 40px 60px;
-    }
-
-    .drop-zone {
-      border: 2px dashed var(--border);
-      border-radius: 16px;
-      padding: 60px 40px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: var(--card);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .drop-zone::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, rgba(0,229,160,0.06), transparent 70%);
-      pointer-events: none;
-    }
-
-    .drop-zone:hover, .drop-zone.drag-over {
-      border-color: var(--accent);
-      background: rgba(0,229,160,0.04);
-    }
-
-    .drop-icon {
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-    }
-
-    .drop-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .drop-sub {
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 24px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-family: var(--font-head);
-      font-weight: 700;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: none;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-    }
-
-    .btn-primary:hover {
-      background: #00ffb3;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(0,229,160,0.3);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-outline:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .upload-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    #fileInput { display: none; }
-
-    /* COLUMNS INFO */
-    .columns-detected {
-      display: none;
-      margin-top: 20px;
-      padding: 16px 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-    }
-
-    .columns-detected.visible { display: block; }
-    .col-label { color: var(--muted); margin-bottom: 8px; }
-    .col-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-    .col-tag {
-      background: var(--card);
-      border: 1px solid var(--border);
-      padding: 3px 10px;
-      border-radius: 6px;
-      color: var(--accent);
-    }
-
-    /* DASHBOARD */
-    #dashboard {
-      display: none;
-      position: relative;
-      z-index: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 40px 80px;
-      animation: fadeUp 0.5s ease both;
-    }
-
-    #dashboard.visible { display: block; }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .section-title {
-      font-size: 0.7rem;
-      font-family: var(--font-mono);
-      color: var(--muted);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* STAT CARDS */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 40px;
-    }
-
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .stat-card:hover { border-color: var(--accent); }
-
-    .stat-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: var(--accent);
-    }
-
-    .stat-label {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-
-    .stat-value {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: -1px;
-      color: var(--accent);
-    }
-
-    .stat-meta {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    /* CHARTS GRID */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-
-    @media (max-width: 768px) {
-      .charts-grid { grid-template-columns: 1fr; }
-      nav { padding: 14px 20px; }
-      .hero, .upload-section, #dashboard { padding-left: 20px; padding-right: 20px; }
-      h1 { font-size: 2rem; }
-    }
-
-    .chart-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      transition: border-color 0.2s;
-    }
-
-    .chart-card:hover { border-color: var(--border); }
-
-    .chart-card.full-width { grid-column: 1 / -1; }
-
-    .chart-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .chart-sub {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
-
-    canvas { max-height: 260px; }
-
-    /* INSIGHTS */
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-      margin-bottom: 40px;
-    }
-
-    .insight-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      transition: all 0.2s;
-    }
-
-    .insight-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-
-    .insight-card.good { border-left: 3px solid var(--accent); }
-    .insight-card.warn { border-left: 3px solid var(--accent4); }
-    .insight-card.bad  { border-left: 3px solid var(--accent3); }
-    .insight-card.info { border-left: 3px solid var(--accent2); }
-
-    .insight-icon { font-size: 1.4rem; flex-shrink: 0; }
-
-    .insight-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .insight-desc {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    /* FOOTER */
-    footer {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 30px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-    }
-
-    /* LOADING */
-    .loader {
-      display: none;
-      text-align: center;
-      padding: 40px;
-    }
-
-    .loader.visible { display: block; }
-
-    .loader-bar {
-      width: 200px;
-      height: 2px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 16px auto;
-      overflow: hidden;
-    }
-
-    .loader-fill {
-      height: 100%;
-      background: var(--accent);
-      width: 0%;
-      animation: load 1.2s ease-in-out infinite;
-      border-radius: 2px;
-    }
-
-    @keyframes load {
-      0% { width: 0%; margin-left: 0; }
-      50% { width: 60%; }
-      100% { width: 0%; margin-left: 100%; }
-    }
-
-    .loader-text {
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    /* TOAST */
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      z-index: 999;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 20px;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s ease;
-      max-width: 320px;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .toast.error { border-left: 3px solid var(--accent3); }
-    .toast.success { border-left: 3px solid var(--accent); }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-
-<nav>
-  <div class="logo">
-    <div class="logo-dot"></div>
-    HealthPulse
-  </div>
-  <div class="nav-tag">CSV → Insights</div>
-</nav>
-
-<section class="hero">
-  <div class="hero-label">Health Analytics</div>
-  <h1>Raw data,<br><span>real insights.</span></h1>
-  <p class="hero-sub">Drop your CSV health data file and get instant charts, stats, and AI-style rule-based insights — no setup needed.</p>
-</section>
-
-<section class="upload-section">
-  <div class="drop-zone" id="dropZone">
-    <div class="drop-icon">📊</div>
-    <div class="drop-title">Drop your health CSV here</div>
-    <div class="drop-sub">Supports: steps, heart rate, sleep, calories, weight, glucose, etc.</div>
-    <div class="upload-actions">
-      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-        ↑ Upload CSV
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" type="button" data-view-trigger="dashboard" aria-label="Open dashboard">
+        <span class="brand-mark">M</span>
+        <span>
+          <strong>MedInsight</strong>
+          <small>Clinical clarity, thoughtfully presented</small>
+        </span>
       </button>
-      <button class="btn btn-outline" onclick="loadSampleData()">
-        Try Sample Data
-      </button>
-    </div>
-    <input type="file" id="fileInput" accept=".csv" onchange="handleFile(this.files[0])"/>
-  </div>
-  <div class="columns-detected" id="colsDetected">
-    <div class="col-label">// Detected columns</div>
-    <div class="col-tags" id="colTags"></div>
-  </div>
-  <div class="loader" id="loader">
-    <div class="loader-text">Crunching your health data...</div>
-    <div class="loader-bar"><div class="loader-fill"></div></div>
-  </div>
-</section>
 
-<section id="dashboard">
-  <div class="section-title">// Summary Stats</div>
-  <div class="stats-grid" id="statsGrid"></div>
+      <nav class="topbar-nav" aria-label="Main navigation">
+        <button class="nav-btn active" type="button" data-view-trigger="dashboard">
+          <span class="nav-icon">▦</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-trigger="history">
+          <span class="nav-icon">◷</span>
+          <span>History</span>
+        </button>
+        <button class="nav-btn" type="button" data-view-trigger="chat">
+          <span class="nav-icon">✦</span>
+          <span>Dr.AI</span>
+        </button>
+        <button class="nav-btn icon-only" id="themeToggle" type="button" aria-label="Toggle theme">
+          <span class="nav-icon" id="themeToggleIcon">☾</span>
+          <span class="sr-only">Toggle theme</span>
+        </button>
+      </nav>
+    </header>
 
-  <div class="section-title">// Charts</div>
-  <div class="charts-grid" id="chartsGrid"></div>
-
-  <div class="section-title">// Insights</div>
-  <div class="insights-grid" id="insightsGrid"></div>
-</section>
-
-<footer>
-  HealthPulse — Your data stays in your browser. Nothing is uploaded to any server.
-</footer>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// ── CHART REGISTRY ──────────────────────────────────────────────────────────
-const chartInstances = {};
-
-function destroyChart(id) {
-  if (chartInstances[id]) {
-    chartInstances[id].destroy();
-    delete chartInstances[id];
-  }
-}
-
-// ── DRAG & DROP ─────────────────────────────────────────────────────────────
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-});
-
-// ── SAMPLE DATA ──────────────────────────────────────────────────────────────
-function loadSampleData() {
-  const rows = [
-    'date,steps,heart_rate,sleep_hours,calories,weight_kg,glucose_mg',
-    '2024-01-01,8200,72,7.5,2100,74.2,92',
-    '2024-01-02,5100,78,6.0,1900,74.1,98',
-    '2024-01-03,10500,68,8.2,2300,73.9,88',
-    '2024-01-04,3200,85,5.5,1700,74.0,105',
-    '2024-01-05,9800,70,7.8,2200,73.8,91',
-    '2024-01-06,11200,66,8.5,2400,73.6,87',
-    '2024-01-07,6700,74,7.0,2000,73.7,94',
-    '2024-01-08,4500,80,6.2,1850,73.8,102',
-    '2024-01-09,12300,65,8.8,2500,73.5,85',
-    '2024-01-10,7800,71,7.3,2150,73.4,90',
-    '2024-01-11,9100,69,7.9,2250,73.3,89',
-    '2024-01-12,2800,88,5.0,1600,73.5,110',
-    '2024-01-13,10800,67,8.3,2350,73.2,86',
-    '2024-01-14,6200,76,6.8,1950,73.3,96',
-    '2024-01-15,8900,72,7.6,2180,73.1,91',
-    '2024-01-16,11500,64,9.0,2450,72.9,84',
-    '2024-01-17,5600,79,6.5,1920,73.0,99',
-    '2024-01-18,7400,73,7.2,2080,72.8,93',
-    '2024-01-19,9600,68,8.1,2280,72.7,88',
-    '2024-01-20,3900,82,5.8,1780,72.9,107',
-  ];
-  const csv = rows.join('\n');
-  const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
-  processData(parsed.data, parsed.meta.fields);
-}
-
-// ── FILE HANDLER ─────────────────────────────────────────────────────────────
-function handleFile(file) {
-  if (!file || !file.name.endsWith('.csv')) {
-    showToast('Please upload a valid .csv file', 'error');
-    return;
-  }
-  showLoader(true);
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: result => {
-      setTimeout(() => {
-        showLoader(false);
-        processData(result.data, result.meta.fields);
-      }, 800);
-    },
-    error: () => {
-      showLoader(false);
-      showToast('Error parsing CSV. Check the format.', 'error');
-    }
-  });
-}
-
-// ── MAIN PROCESSOR ───────────────────────────────────────────────────────────
-function processData(data, fields) {
-  if (!data.length) { showToast('CSV seems empty!', 'error'); return; }
-
-  // Show detected columns
-  const colsEl = document.getElementById('colsDetected');
-  const colTagsEl = document.getElementById('colTags');
-  colTagsEl.innerHTML = fields.map(f => `<span class="col-tag">${f}</span>`).join('');
-  colsEl.classList.add('visible');
-
-  // Normalize
-  const lf = fields.map(f => f.toLowerCase().trim());
-  const rows = data.map(row => {
-    const n = {};
-    fields.forEach(f => { n[f.toLowerCase().trim()] = row[f]; });
-    return n;
-  });
-
-  // Show dashboard
-  const dash = document.getElementById('dashboard');
-  dash.classList.add('visible');
-  dash.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  buildStats(rows, lf);
-  buildCharts(rows, lf);
-  buildInsights(rows, lf);
-  showToast('Dashboard ready! ✓', 'success');
-}
-
-// ── STATS ────────────────────────────────────────────────────────────────────
-function buildStats(rows, fields) {
-  const grid = document.getElementById('statsGrid');
-  grid.innerHTML = '';
-
-  const numericFields = fields.filter(f => f !== 'date' && !isNaN(parseFloat(rows[0][f])));
-  numericFields.slice(0, 8).forEach(f => {
-    const vals = rows.map(r => parseFloat(r[f])).filter(v => !isNaN(v));
-    if (!vals.length) return;
-    const avg = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
-    const max = Math.max(...vals).toFixed(1);
-    const min = Math.min(...vals).toFixed(1);
-    grid.innerHTML += `
-      <div class="stat-card">
-        <div class="stat-label">${f.replace(/_/g,' ')}</div>
-        <div class="stat-value">${avg}</div>
-        <div class="stat-meta">avg  ·  min ${min}  ·  max ${max}</div>
-      </div>`;
-  });
-}
-
-// ── CHARTS ───────────────────────────────────────────────────────────────────
-const COLORS = ['#00e5a0','#7b61ff','#ff6b6b','#ffd166','#06d6a0','#118ab2'];
-
-function buildCharts(rows, fields) {
-  const grid = document.getElementById('chartsGrid');
-  grid.innerHTML = '';
-  Object.keys(chartInstances).forEach(k => { chartInstances[k].destroy(); delete chartInstances[k]; });
-
-  const dateField = fields.find(f => f.includes('date') || f.includes('time') || f.includes('day'));
-  const labels = dateField ? rows.map(r => r[dateField]) : rows.map((_, i) => `Entry ${i+1}`);
-
-  const numericFields = fields.filter(f => f !== dateField && !isNaN(parseFloat(rows[0]?.[f])));
-
-  // Line chart: all numeric over time
-  if (numericFields.length > 0) {
-    const card = makeChartCard('trend-all', 'Trends Over Time', 'All metrics across entries', true);
-    grid.appendChild(card);
-    const ctx = card.querySelector('canvas').getContext('2d');
-    chartInstances['trend-all'] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: numericFields.slice(0, 4).map((f, i) => ({
-          label: f.replace(/_/g,' '),
-          data: rows.map(r => parseFloat(r[f]) || null),
-          borderColor: COLORS[i],
-          backgroundColor: COLORS[i] + '18',
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 3,
-          fill: false,
-        }))
-      },
-      options: chartOpts()
-    });
-  }
-
-  // Bar chart for first metric
-  if (numericFields.length > 0) {
-    const f = numericFields[0];
-    const card = makeChartCard('bar-main', `${f.replace(/_/g,' ')} — Bar View`, 'Entry-by-entry breakdown');
-    grid.appendChild(card);
-    const ctx = card.querySelector('canvas').getContext('2d');
-    chartInstances['bar-main'] = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: f,
-          data: rows.map(r => parseFloat(r[f]) || 0),
-          backgroundColor: COLORS[0] + 'bb',
-          borderColor: COLORS[0],
-          borderWidth: 1,
-          borderRadius: 4,
-        }]
-      },
-      options: chartOpts()
-    });
-  }
-
-  // Doughnut: distribution of 2nd metric
-  if (numericFields.length > 1) {
-    const f = numericFields[1];
-    const vals = rows.map(r => parseFloat(r[f])).filter(v => !isNaN(v));
-    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
-    const above = vals.filter(v => v >= avg).length;
-    const below = vals.length - above;
-    const card = makeChartCard('donut-dist', `${f.replace(/_/g,' ')} Distribution`, 'Above vs below average');
-    grid.appendChild(card);
-    const ctx = card.querySelector('canvas').getContext('2d');
-    chartInstances['donut-dist'] = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Above Avg', 'Below Avg'],
-        datasets: [{ data: [above, below], backgroundColor: [COLORS[0], COLORS[2]], borderWidth: 0 }]
-      },
-      options: { ...chartOpts(), cutout: '65%', plugins: { legend: { display: true, labels: { color: '#6b6b88', font: { family: 'DM Mono', size: 11 } } } } }
-    });
-  }
-
-  // Scatter: field 1 vs field 2
-  if (numericFields.length >= 2) {
-    const fx = numericFields[0], fy = numericFields[1];
-    const card = makeChartCard('scatter-xy', `${fx.replace(/_/g,' ')} vs ${fy.replace(/_/g,' ')}`, 'Correlation view');
-    grid.appendChild(card);
-    const ctx = card.querySelector('canvas').getContext('2d');
-    chartInstances['scatter-xy'] = new Chart(ctx, {
-      type: 'scatter',
-      data: {
-        datasets: [{
-          label: `${fx} vs ${fy}`,
-          data: rows.map(r => ({ x: parseFloat(r[fx]), y: parseFloat(r[fy]) })).filter(p => !isNaN(p.x) && !isNaN(p.y)),
-          backgroundColor: COLORS[1] + 'bb',
-          borderColor: COLORS[1],
-          pointRadius: 5,
-        }]
-      },
-      options: chartOpts()
-    });
-  }
-}
-
-function makeChartCard(id, title, sub, fullWidth = false) {
-  const div = document.createElement('div');
-  div.className = 'chart-card' + (fullWidth ? ' full-width' : '');
-  div.innerHTML = `
-    <div class="chart-title">${title}</div>
-    <div class="chart-sub">${sub}</div>
-    <canvas id="canvas-${id}"></canvas>`;
-  return div;
-}
-
-function chartOpts() {
-  return {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: { labels: { color: '#6b6b88', font: { family: 'DM Mono', size: 11 }, boxWidth: 12 } },
-      tooltip: {
-        backgroundColor: '#16161f',
-        borderColor: '#2a2a38',
-        borderWidth: 1,
-        titleColor: '#e8e8f0',
-        bodyColor: '#6b6b88',
-        titleFont: { family: 'Syne', weight: '700' },
-        bodyFont: { family: 'DM Mono', size: 11 },
-      }
-    },
-    scales: {
-      x: { ticks: { color: '#6b6b88', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 8 }, grid: { color: '#2a2a38' } },
-      y: { ticks: { color: '#6b6b88', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#2a2a38' } }
-    }
-  };
-}
-
-// ── INSIGHTS (RULE-BASED) ────────────────────────────────────────────────────
-function buildInsights(rows, fields) {
-  const grid = document.getElementById('insightsGrid');
-  grid.innerHTML = '';
-  const insights = [];
-
-  function avg(f) {
-    const vals = rows.map(r => parseFloat(r[f])).filter(v => !isNaN(v));
-    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
-  }
-
-  // STEPS
-  const stepsF = fields.find(f => f.includes('step'));
-  if (stepsF) {
-    const a = avg(stepsF);
-    if (a !== null) {
-      if (a >= 10000) insights.push({ type:'good', icon:'🏃', title:'Great Step Count', desc:`Your average of ${a.toFixed(0)} steps/day exceeds the 10,000-step goal. Keep it up!` });
-      else if (a >= 7500) insights.push({ type:'info', icon:'👟', title:'Decent Activity Level', desc:`Averaging ${a.toFixed(0)} steps/day. Push toward 10,000 for optimal cardiovascular health.` });
-      else insights.push({ type:'warn', icon:'⚠️', title:'Low Daily Steps', desc:`Only ${a.toFixed(0)} steps/day on average. Aim for 7,500–10,000 to reduce sedentary risk.` });
-    }
-  }
-
-  // HEART RATE
-  const hrF = fields.find(f => f.includes('heart') || f === 'hr' || f === 'bpm');
-  if (hrF) {
-    const a = avg(hrF);
-    if (a !== null) {
-      if (a < 60) insights.push({ type:'info', icon:'💙', title:'Athlete-Range Heart Rate', desc:`Avg resting HR of ${a.toFixed(0)} bpm suggests excellent cardiovascular fitness.` });
-      else if (a <= 80) insights.push({ type:'good', icon:'❤️', title:'Healthy Heart Rate', desc:`Avg resting HR of ${a.toFixed(0)} bpm — within the normal 60–80 bpm range.` });
-      else if (a <= 100) insights.push({ type:'warn', icon:'💛', title:'Elevated Heart Rate', desc:`Avg HR of ${a.toFixed(0)} bpm is slightly elevated. Consider stress reduction and aerobic exercise.` });
-      else insights.push({ type:'bad', icon:'🔴', title:'High Resting Heart Rate', desc:`Avg HR of ${a.toFixed(0)} bpm is above 100 bpm. Consult a healthcare provider.` });
-    }
-  }
-
-  // SLEEP
-  const sleepF = fields.find(f => f.includes('sleep'));
-  if (sleepF) {
-    const a = avg(sleepF);
-    if (a !== null) {
-      if (a >= 7 && a <= 9) insights.push({ type:'good', icon:'😴', title:'Optimal Sleep Duration', desc:`Averaging ${a.toFixed(1)} hrs of sleep — right in the recommended 7–9 hour window.` });
-      else if (a >= 6) insights.push({ type:'warn', icon:'🌙', title:'Slightly Under-Slept', desc:`Only ${a.toFixed(1)} hrs avg. Chronic mild sleep deprivation affects mood, focus, and immunity.` });
-      else insights.push({ type:'bad', icon:'😵', title:'Critically Low Sleep', desc:`${a.toFixed(1)} hrs avg sleep is seriously insufficient. This affects nearly every health marker.` });
-    }
-  }
-
-  // CALORIES
-  const calF = fields.find(f => f.includes('calori') || f.includes('kcal'));
-  if (calF) {
-    const a = avg(calF);
-    if (a !== null) {
-      if (a >= 1800 && a <= 2500) insights.push({ type:'good', icon:'🥗', title:'Balanced Caloric Intake', desc:`Avg ${a.toFixed(0)} kcal/day falls within a healthy maintenance range for most adults.` });
-      else if (a < 1400) insights.push({ type:'bad', icon:'📉', title:'Very Low Caloric Intake', desc:`${a.toFixed(0)} kcal/day may indicate undereating, which can slow metabolism and cause deficiencies.` });
-      else if (a > 2800) insights.push({ type:'warn', icon:'📈', title:'High Caloric Intake', desc:`Averaging ${a.toFixed(0)} kcal/day. Monitor if weight management is a goal.` });
-    }
-  }
-
-  // WEIGHT TREND
-  const wtF = fields.find(f => f.includes('weight') || f.includes('kg') || f.includes('lbs'));
-  if (wtF) {
-    const vals = rows.map(r => parseFloat(r[wtF])).filter(v => !isNaN(v));
-    if (vals.length > 2) {
-      const trend = vals[vals.length-1] - vals[0];
-      if (Math.abs(trend) < 0.5) insights.push({ type:'info', icon:'⚖️', title:'Stable Weight', desc:`Weight has been stable over the recorded period (change: ${trend.toFixed(1)} kg).` });
-      else if (trend < 0) insights.push({ type:'good', icon:'📉', title:'Weight Trending Down', desc:`Lost ${Math.abs(trend).toFixed(1)} kg over this period — a positive trend if intentional.` });
-      else insights.push({ type:'warn', icon:'📈', title:'Weight Trending Up', desc:`Gained ${trend.toFixed(1)} kg. Review caloric intake and activity levels.` });
-    }
-  }
-
-  // GLUCOSE
-  const gluF = fields.find(f => f.includes('glucose') || f.includes('sugar') || f.includes('bg'));
-  if (gluF) {
-    const a = avg(gluF);
-    if (a !== null) {
-      if (a < 100) insights.push({ type:'good', icon:'🩸', title:'Normal Blood Glucose', desc:`Avg glucose of ${a.toFixed(0)} mg/dL is in the normal fasting range (<100 mg/dL).` });
-      else if (a < 126) insights.push({ type:'warn', icon:'⚠️', title:'Pre-Diabetic Glucose Range', desc:`Avg ${a.toFixed(0)} mg/dL falls in the pre-diabetic range (100–125). Consider dietary changes.` });
-      else insights.push({ type:'bad', icon:'🔴', title:'High Blood Glucose', desc:`Avg glucose of ${a.toFixed(0)} mg/dL is in the diabetic range. Please consult a doctor.` });
-    }
-  }
-
-  // Generic correlation insight
-  insights.push({ type:'info', icon:'📊', title:`${rows.length} Data Points Analyzed`, desc:`Dashboard generated from ${rows.length} entries across all your health metrics above.` });
-
-  if (!insights.length) {
-    insights.push({ type:'info', icon:'🔍', title:'No Matching Columns', desc:'Add columns like steps, heart_rate, sleep_hours, calories, weight_kg, or glucose_mg for smart insights.' });
-  }
-
-  insights.forEach(ins => {
-    grid.innerHTML += `
-      <div class="insight-card ${ins.type}">
-        <div class="insight-icon">${ins.icon}</div>
-        <div>
-          <div class="insight-title">${ins.title}</div>
-          <div class="insight-desc">${ins.desc}</div>
+    <main class="layout">
+      <aside class="sidebar-card auth-panel" id="authPanel">
+        <div class="panel-head compact">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h2 id="authTitle">Secure sign in</h2>
+          </div>
+          <span class="status-pill neutral" id="authStatusBadge">Offline ready</span>
         </div>
-      </div>`;
-  });
-}
 
-// ── UTILS ────────────────────────────────────────────────────────────────────
-function showLoader(v) {
-  document.getElementById('loader').classList.toggle('visible', v);
-}
+        <p class="muted-text" id="authCopy">
+          Sign in to store reports, sync your history, and continue conversations with Dr.AI.
+        </p>
 
-function showToast(msg, type='info') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove('show'), 3500);
-}
-</script>
+        <div id="signedOutState">
+          <div class="auth-actions">
+            <button class="primary-btn wide" type="button" id="googleSignInBtn">Continue with Google</button>
+            <button class="secondary-btn wide" type="button" id="toggleAuthModeBtn">Use email instead</button>
+          </div>
+
+          <form class="auth-form hidden" id="authForm">
+            <label>
+              <span>Email</span>
+              <input id="authEmail" type="email" placeholder="doctor@hospital.com" required />
+            </label>
+            <label>
+              <span>Password</span>
+              <input id="authPassword" type="password" placeholder="Minimum 8 characters" minlength="8" required />
+            </label>
+            <button class="primary-btn wide" type="submit" id="authSubmitBtn">Sign in</button>
+          </form>
+        </div>
+
+        <div class="hidden" id="signedInState">
+          <div class="profile-card">
+            <div class="avatar" id="profileAvatar">MI</div>
+            <div>
+              <h3 id="profileName">Clinician</h3>
+              <p id="profileEmail" class="muted-text">user@example.com</p>
+            </div>
+          </div>
+
+          <div class="auth-actions stacked-gap">
+            <button class="secondary-btn wide" type="button" id="refreshDataBtn">Refresh data</button>
+            <button class="ghost-btn wide" type="button" id="signOutBtn">Sign out</button>
+          </div>
+        </div>
+
+        <p class="helper-text" id="authHelperText">
+          Supabase client config is loaded from `/api/config` at runtime.
+        </p>
+      </aside>
+
+      <section class="content-column">
+        <section class="view active" id="dashboardView" data-view="dashboard">
+          <div class="hero-card">
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <h1>MedInsight Dashboard</h1>
+              <p class="hero-copy">Your latest medical report analysis at a glance</p>
+            </div>
+            <div class="hero-actions">
+              <button class="primary-btn" id="uploadTriggerBtn" type="button">Upload report</button>
+              <input
+                id="reportInput"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt"
+                hidden
+              />
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="card analytics-card">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Analysis Graph</p>
+                  <h2>Latest report abnormality profile</h2>
+                </div>
+                <span class="status-pill" id="analysisStatusPill">Awaiting report</span>
+              </div>
+              <canvas id="analysisChart" aria-label="Report analysis chart"></canvas>
+            </article>
+
+            <aside class="card metrics-card">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Metrics</p>
+                  <h2>High, low, and moderate markers</h2>
+                </div>
+              </div>
+              <div class="metric-list" id="metricList"></div>
+            </aside>
+
+            <article class="card summary-card">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">AI Analysis</p>
+                  <h2>Clinical summary</h2>
+                </div>
+                <button class="ghost-btn hidden" id="viewLatestDetailsBtn" type="button">Open details</button>
+              </div>
+
+              <div class="finding-sections">
+                <section class="finding-block critical">
+                  <header>
+                    <span class="finding-dot"></span>
+                    <h3>Critical</h3>
+                  </header>
+                  <ul id="criticalFindings"></ul>
+                </section>
+                <section class="finding-block moderate">
+                  <header>
+                    <span class="finding-dot"></span>
+                    <h3>Moderate</h3>
+                  </header>
+                  <ul id="moderateFindings"></ul>
+                </section>
+                <section class="finding-block elevated">
+                  <header>
+                    <span class="finding-dot"></span>
+                    <h3>Elevated</h3>
+                  </header>
+                  <ul id="elevatedFindings"></ul>
+                </section>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="historyView" data-view="history">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">History</p>
+              <h1>Past Reports</h1>
+              <p class="hero-copy">Review earlier uploads, timestamps, and detailed findings.</p>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="history-table" id="historyTable"></div>
+          </div>
+        </section>
+
+        <section class="view" id="chatView" data-view="chat">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Dr.AI</p>
+              <h1>Ask follow-up questions</h1>
+              <p class="hero-copy">
+                Dr.AI can explain trends and answer doubts, but it is not a substitute for a licensed physician.
+              </p>
+            </div>
+          </div>
+
+          <div class="chat-layout">
+            <aside class="card prompt-card">
+              <div class="panel-head compact">
+                <div>
+                  <p class="eyebrow">Starter prompts</p>
+                  <h2>Suggested questions</h2>
+                </div>
+              </div>
+              <div class="prompt-list" id="promptList"></div>
+            </aside>
+
+            <section class="card chat-card">
+              <div class="panel-head compact">
+                <div>
+                  <p class="eyebrow">Conversation</p>
+                  <h2>Dr.AI</h2>
+                </div>
+                <span class="status-pill neutral">Medical education only</span>
+              </div>
+
+              <div class="chat-thread" id="chatThread"></div>
+
+              <form class="chat-form" id="chatForm">
+                <textarea
+                  id="chatInput"
+                  rows="3"
+                  placeholder="Ask about your report, a metric, or a health-related doubt..."
+                  required
+                ></textarea>
+                <div class="chat-actions">
+                  <p class="helper-text">Avoid sharing highly sensitive personal details beyond the report itself.</p>
+                  <button class="primary-btn" type="submit" id="chatSubmitBtn">Send</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="detail-modal" id="reportDetailModal">
+    <div class="modal-shell">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Report details</p>
+          <h2 id="modalReportTitle">Latest report</h2>
+        </div>
+        <button class="ghost-btn" type="button" id="closeModalBtn">Close</button>
+      </div>
+
+      <div class="modal-meta" id="modalMeta"></div>
+
+      <section>
+        <h3 class="modal-subheading">Findings</h3>
+        <div class="finding-sections compact-findings">
+          <section class="finding-block critical">
+            <header>
+              <span class="finding-dot"></span>
+              <h3>Critical</h3>
+            </header>
+            <ul id="modalCriticalFindings"></ul>
+          </section>
+          <section class="finding-block moderate">
+            <header>
+              <span class="finding-dot"></span>
+              <h3>Moderate</h3>
+            </header>
+            <ul id="modalModerateFindings"></ul>
+          </section>
+          <section class="finding-block elevated">
+            <header>
+              <span class="finding-dot"></span>
+              <h3>Elevated</h3>
+            </header>
+            <ul id="modalElevatedFindings"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section>
+        <h3 class="modal-subheading">Metrics</h3>
+        <div class="metric-list modal-metric-list" id="modalMetricList"></div>
+      </section>
+
+      <div class="modal-actions">
+        <a class="secondary-btn hidden" id="openFileLink" target="_blank" rel="noreferrer">Open file</a>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+{
+  "name": "medinsight",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npx vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "mammoth": "^1.8.0",
+    "openai": "^4.91.1",
+    "pdf-parse": "^1.1.1"
+  }
+}
