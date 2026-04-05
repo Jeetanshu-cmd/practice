@@ -836,6 +836,12 @@ h3 {
 
 .history-detail-card {
   margin-top: 20px;
+  border-color: var(--line);
+}
+
+.history-detail-card.is-active {
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--line));
+  box-shadow: var(--shadow-md);
 }
 
 .history-metric-list {

@@ -104,6 +104,7 @@ function cacheElements() {
     moderateFindings: document.getElementById('moderateFindings'),
     elevatedFindings: document.getElementById('elevatedFindings'),
     historyTable: document.getElementById('historyTable'),
+    historyDetailCard: document.getElementById('historyDetailCard'),
     historyDetailTitle: document.getElementById('historyDetailTitle'),
     historyDetailCopy: document.getElementById('historyDetailCopy'),
     historyDetailMeta: document.getElementById('historyDetailMeta'),
@@ -493,6 +494,7 @@ function renderHistory(reports) {
 
 function renderHistoryDetail(report) {
   if (!report) {
+    els.historyDetailCard.classList.remove('is-active');
     els.historyDetailTitle.textContent = 'Choose a report from history';
     els.historyDetailCopy.textContent = 'Its stored findings, metrics, and summary will appear here for side-by-side historical review.';
     els.historyDetailMeta.innerHTML = '';
@@ -506,6 +508,7 @@ function renderHistoryDetail(report) {
   const summary = report.summary_json || {};
   const uploaded = new Date(report.uploaded_at);
 
+  els.historyDetailCard.classList.add('is-active');
   els.historyDetailTitle.textContent = report.file_name;
   els.historyDetailCopy.textContent = 'This is the saved analysis snapshot for the selected historical report.';
   els.historyDetailMeta.innerHTML = [
@@ -517,6 +520,7 @@ function renderHistoryDetail(report) {
   renderList(els.historyModerateFindings, summary.moderate || ['No moderate findings recorded.']);
   renderList(els.historyElevatedFindings, summary.elevated || ['No elevated findings recorded.']);
   renderMetrics(report.metrics || [], els.historyMetricList);
+  els.historyDetailCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function openReportModal(report) {
