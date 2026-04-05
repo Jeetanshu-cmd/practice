@@ -834,6 +834,14 @@ h3 {
   gap: 14px;
 }
 
+.history-detail-card {
+  margin-top: 20px;
+}
+
+.history-metric-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .history-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(130px, 0.72fr) minmax(130px, 0.72fr) 92px;
@@ -1311,6 +1319,10 @@ h3 {
   .history-hero-strip,
   .modal-metric-list,
   .chart-stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-metric-list {
     grid-template-columns: 1fr;
   }
 

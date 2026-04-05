@@ -323,6 +323,53 @@
             </div>
             <div class="history-table" id="historyTable"></div>
           </div>
+
+          <div class="card history-detail-card" id="historyDetailCard">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Selected Report</p>
+                <h2 id="historyDetailTitle">Choose a report from history</h2>
+                <p class="panel-copy" id="historyDetailCopy">Its stored findings, metrics, and summary will appear here for side-by-side historical review.</p>
+              </div>
+            </div>
+
+            <div class="modal-meta" id="historyDetailMeta"></div>
+
+            <div class="finding-sections compact-findings">
+              <section class="finding-block critical">
+                <header>
+                  <span class="finding-dot"></span>
+                  <div>
+                    <h3>Critical</h3>
+                    <p>Needs priority medical review</p>
+                  </div>
+                </header>
+                <ul id="historyCriticalFindings"></ul>
+              </section>
+              <section class="finding-block moderate">
+                <header>
+                  <span class="finding-dot"></span>
+                  <div>
+                    <h3>Moderate</h3>
+                    <p>Watch closely and discuss trends</p>
+                  </div>
+                </header>
+                <ul id="historyModerateFindings"></ul>
+              </section>
+              <section class="finding-block elevated">
+                <header>
+                  <span class="finding-dot"></span>
+                  <div>
+                    <h3>Elevated</h3>
+                    <p>Above range but often manageable</p>
+                  </div>
+                </header>
+                <ul id="historyElevatedFindings"></ul>
+              </section>
+            </div>
+
+            <div class="metric-list history-metric-list" id="historyMetricList"></div>
+          </div>
         </section>
 
         <section class="view" id="chatView" data-view="chat">

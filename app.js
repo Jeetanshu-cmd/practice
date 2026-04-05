@@ -63,6 +63,7 @@ async function init() {
   renderFindings(demoAnalysis);
   renderMetrics(demoAnalysis.metrics, els.metricList);
   renderHistory([]);
+  renderHistoryDetail(null);
   renderChatThread([
     {
       role: 'assistant',
@@ -103,6 +104,13 @@ function cacheElements() {
     moderateFindings: document.getElementById('moderateFindings'),
     elevatedFindings: document.getElementById('elevatedFindings'),
     historyTable: document.getElementById('historyTable'),
+    historyDetailTitle: document.getElementById('historyDetailTitle'),
+    historyDetailCopy: document.getElementById('historyDetailCopy'),
+    historyDetailMeta: document.getElementById('historyDetailMeta'),
+    historyCriticalFindings: document.getElementById('historyCriticalFindings'),
+    historyModerateFindings: document.getElementById('historyModerateFindings'),
+    historyElevatedFindings: document.getElementById('historyElevatedFindings'),
+    historyMetricList: document.getElementById('historyMetricList'),
     promptList: document.getElementById('promptList'),
     chatThread: document.getElementById('chatThread'),
     chatForm: document.getElementById('chatForm'),
@@ -287,6 +295,7 @@ async function signOut() {
   state.chatMessages = [];
   state.chatSessionId = null;
   renderHistory([]);
+  renderHistoryDetail(null);
   renderFindings(demoAnalysis);
   renderMetrics(demoAnalysis.metrics, els.metricList);
   renderChatThread([
@@ -321,6 +330,7 @@ async function loadReports() {
   } else {
     renderFindings(demoAnalysis);
     renderMetrics(demoAnalysis.metrics, els.metricList);
+    renderHistoryDetail(null);
     renderChart([]);
     els.analysisStatusPill.textContent = 'Awaiting report';
   }
@@ -336,6 +346,7 @@ async function hydrateLatestReport(reportId) {
   els.viewLatestDetailsBtn.classList.remove('hidden');
   renderFindings(summary);
   renderMetrics(report.metrics, els.metricList);
+  renderHistoryDetail(report);
   renderChart(report.metrics);
 }
 
@@ -470,10 +481,39 @@ function renderHistory(reports) {
     button.addEventListener('click', async () => {
       const report = await loadReportDetail(button.dataset.openReport);
       if (report) {
-        openReportModal(report);
+        renderHistoryDetail(report);
+        state.selectedReport = report;
       }
     });
   });
+}
+
+function renderHistoryDetail(report) {
+  if (!report) {
+    els.historyDetailTitle.textContent = 'Choose a report from history';
+    els.historyDetailCopy.textContent = 'Its stored findings, metrics, and summary will appear here for side-by-side historical review.';
+    els.historyDetailMeta.innerHTML = '';
+    renderList(els.historyCriticalFindings, ['No report selected yet.']);
+    renderList(els.historyModerateFindings, ['Select a report to inspect its stored analysis.']);
+    renderList(els.historyElevatedFindings, ['Historical elevated markers will appear here.']);
+    renderMetrics([], els.historyMetricList);
+    return;
+  }
+
+  const summary = report.summary_json || {};
+  const uploaded = new Date(report.uploaded_at);
+
+  els.historyDetailTitle.textContent = report.file_name;
+  els.historyDetailCopy.textContent = 'This is the saved analysis snapshot for the selected historical report.';
+  els.historyDetailMeta.innerHTML = [
+    `<span>${escapeHtml(readableStatus(report.analysis_status || 'processing'))}</span>`,
+    `<span>${uploaded.toLocaleDateString()}</span>`,
+    `<span>${uploaded.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>`
+  ].join('');
+  renderList(els.historyCriticalFindings, summary.critical || ['No critical findings recorded.']);
+  renderList(els.historyModerateFindings, summary.moderate || ['No moderate findings recorded.']);
+  renderList(els.historyElevatedFindings, summary.elevated || ['No elevated findings recorded.']);
+  renderMetrics(report.metrics || [], els.historyMetricList);
 }
 
 function openReportModal(report) {
