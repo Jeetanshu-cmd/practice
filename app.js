@@ -178,14 +178,17 @@ function bindEvents() {
 
 async function bootstrapConfig() {
   try {
-    const response = await fetch('/api/config');
-    if (!response.ok) throw new Error('Config endpoint unavailable');
+    state.config = window.MEDINSIGHT_CONFIG || null;
 
-    state.config = await response.json();
+    if (!state.config?.supabaseUrl || !state.config?.supabaseAnonKey) {
+      const response = await fetch('/api/config');
+      if (!response.ok) throw new Error('Config endpoint unavailable');
+      state.config = await response.json();
+    }
 
     if (!state.config.supabaseUrl || !state.config.supabaseAnonKey) {
       els.authStatusBadge.textContent = 'Configuration needed';
-      els.authHelperText.textContent = 'Add Supabase URL and anon key to Vercel environment variables to enable authentication.';
+      els.authHelperText.textContent = 'Add Supabase public config to `config.js` or expose it through `/api/config`.';
       renderChart([]);
       return;
     }
@@ -218,7 +221,7 @@ async function bootstrapConfig() {
   } catch (error) {
     console.error(error);
     els.authStatusBadge.textContent = 'Backend unavailable';
-    els.authHelperText.textContent = 'Could not load runtime configuration. The UI is available, but auth and storage are disabled until the backend is configured.';
+    els.authHelperText.textContent = 'Could not load Supabase configuration. The UI is available, but auth and storage are disabled until configuration is reachable.';
     renderChart([]);
   }
 }
