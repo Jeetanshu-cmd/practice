@@ -445,8 +445,8 @@ function renderHistory(reports) {
   if (!reports.length) {
     els.historyTable.innerHTML = `
       <div class="empty-state">
+        <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M10 3a7 7 0 1 0 7 7h-2a5 5 0 1 1-1.46-3.54L11 9h6V3l-2.04 2.04A6.96 6.96 0 0 0 10 3Zm-.75 3.5h1.5v4l3 1.8-.75 1.23-3.75-2.28V6.5Z"/></svg></span>
         <strong>No reports uploaded yet</strong>
-        <p>Your archive will appear here with timestamps, status, and quick detail access once you upload the first report.</p>
       </div>
     `;
     return;
@@ -465,7 +465,6 @@ function renderHistory(reports) {
               <span class="history-status history-status-${escapeHtml((report.analysis_status || 'processing').toLowerCase())}">${escapeHtml(status)}</span>
             </div>
             <strong>${escapeHtml(report.file_name)}</strong>
-            <span>Stored for longitudinal review and detailed re-checking.</span>
           </div>
           <div class="history-meta-block">
             <span class="history-meta-label">Date</span>
@@ -576,8 +575,8 @@ function renderMetrics(metrics, target) {
   if (!metrics?.length) {
     target.innerHTML = `
       <div class="empty-state">
+        <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M4 5h2v10H4V5Zm5-2h2v12H9V3Zm5 4h2v8h-2V7Z"/></svg></span>
         <strong>No extracted markers yet</strong>
-        <p>Metric cards will appear here after analysis identifies abnormal or noteworthy values.</p>
       </div>
     `;
     return;
@@ -595,7 +594,6 @@ function renderMetrics(metrics, target) {
             <div>
               <span class="metric-label">${escapeHtml(readableStatus(severity))}</span>
               <strong>${escapeHtml(metricName)}</strong>
-              <span class="muted-text">${escapeHtml(metric.summary || 'Clinical marker')}</span>
             </div>
             <span class="metric-value">${escapeHtml(String(metric.value ?? '--'))} ${escapeHtml(metric.unit || '')}</span>
           </header>

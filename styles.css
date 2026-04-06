@@ -196,6 +196,11 @@ h3 {
   font-size: 1.05rem;
 }
 
+.brand-text {
+  display: inline-flex;
+  align-items: center;
+}
+
 .brand small,
 .muted-text,
 .helper-text,
@@ -358,6 +363,9 @@ h3 {
 }
 
 .rail-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 14px 16px;
   border-radius: 20px;
   border: 1px solid var(--line);
@@ -369,6 +377,16 @@ h3 {
 .metric-item strong {
   display: block;
   margin-bottom: 4px;
+}
+
+.rail-note strong,
+.section-aside-note strong,
+.icon-stat strong {
+  margin-bottom: 0;
+}
+
+.section-aside-note strong {
+  color: var(--ink);
 }
 
 .eyebrow {
@@ -425,6 +443,28 @@ h3 {
   color: var(--ink-soft);
 }
 
+.section-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+  border: 1px solid var(--line);
+  color: var(--primary);
+  flex: none;
+}
+
+.section-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.section-icon svg path,
+.section-icon svg rect {
+  fill: currentColor;
+}
+
 .hero-card {
   padding: 34px;
   margin-bottom: 18px;
@@ -450,7 +490,7 @@ h3 {
 .hero-side-head {
   display: grid;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .hero-side-copy,
@@ -483,6 +523,8 @@ h3 {
 }
 
 .hero-meta-card {
+  display: grid;
+  gap: 12px;
   padding: 18px;
   border-radius: 20px;
   border: 1px solid var(--line);
@@ -494,7 +536,6 @@ h3 {
 }
 
 .hero-meta-label,
-.hero-aside-grid span,
 .history-file-type {
   display: inline-flex;
   align-items: center;
@@ -509,7 +550,7 @@ h3 {
 .hero-meta-card strong,
 .hero-aside-grid strong {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
 .hero-aside-grid {
@@ -517,6 +558,12 @@ h3 {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--line);
+}
+
+.icon-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 h1 {
@@ -542,6 +589,9 @@ h3 {
 }
 
 .section-aside-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   max-width: 280px;
   padding: 14px 16px;
   border-radius: 20px;
@@ -567,6 +617,17 @@ h3 {
 
 .side-story-card h2 {
   margin-bottom: 10px;
+}
+
+.mini-icon-row {
+  display: flex;
+  gap: 10px;
+}
+
+.mini-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .analytics-card,
@@ -595,6 +656,9 @@ h3 {
 }
 
 .chart-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid var(--line);
@@ -603,12 +667,11 @@ h3 {
 
 .chart-stat-card span,
 .modal-highlight span {
-  display: block;
-  margin-bottom: 6px;
+  display: inline-grid;
   font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--primary);
 }
 
 .chart-stat-card strong,
@@ -814,6 +877,9 @@ h3 {
 }
 
 .history-hero-strip div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 16px 18px;
   border-radius: 20px;
   border: 1px solid var(--line);
@@ -821,12 +887,11 @@ h3 {
 }
 
 .history-hero-strip span {
-  display: block;
-  margin-bottom: 8px;
+  display: inline-grid;
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--ink-soft);
+  color: var(--primary);
 }
 
 .history-table {
@@ -936,6 +1001,24 @@ h3 {
 
 .prompt-copy {
   margin: 10px 0 16px;
+}
+
+.inline-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--ink-soft);
+  font-size: 0.84rem;
 }
 
 .prompt-chip {
@@ -1122,6 +1205,9 @@ h3 {
 }
 
 .empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
   padding: 28px;
   border-radius: 24px;
   border: 1px dashed var(--line-strong);
@@ -1131,7 +1217,7 @@ h3 {
 
 .empty-state strong {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .empty-state p {
@@ -1197,6 +1283,8 @@ h3 {
 }
 
 .modal-highlight {
+  display: grid;
+  gap: 12px;
   padding: 18px;
   border-radius: 22px;
   border: 1px solid var(--line);
