@@ -7,6 +7,8 @@ const starterPrompts = [
 ];
 
 const demoAnalysis = {
+  overview:
+    'No report has been analyzed yet. Once a report is uploaded, this section will provide a longer summary of the main abnormalities, what body systems may be affected, and symptoms that can be associated with the reported findings. This is a report-based interpretation and should still be confirmed with a clinician.',
   critical: ['Upload a report to generate an AI-assisted summary of urgent findings.'],
   moderate: ['Moderate findings will appear here once the document is analyzed.'],
   elevated: ['Elevated markers and trend observations will be listed here.'],
@@ -43,6 +45,7 @@ const state = {
   supabase: null,
   session: null,
   user: null,
+  profileMenuOpen: false,
   chart: null,
   reports: [],
   selectedReport: null,
@@ -92,13 +95,15 @@ function cacheElements() {
     profileName: document.getElementById('profileName'),
     profileEmail: document.getElementById('profileEmail'),
     profileQuickBtn: document.getElementById('profileQuickBtn'),
-    authPanel: document.getElementById('authPanel'),
+    profileQuickAvatar: document.getElementById('profileQuickAvatar'),
+    profileMenuPanel: document.getElementById('profileMenuPanel'),
     themeToggle: document.getElementById('themeToggle'),
     themeToggleIcon: document.getElementById('themeToggleIcon'),
     reportInput: document.getElementById('reportInput'),
     uploadTriggerBtn: document.getElementById('uploadTriggerBtn'),
     analysisStatusPill: document.getElementById('analysisStatusPill'),
     chartSummary: document.getElementById('chartSummary'),
+    analysisOverview: document.getElementById('analysisOverview'),
     metricList: document.getElementById('metricList'),
     criticalFindings: document.getElementById('criticalFindings'),
     moderateFindings: document.getElementById('moderateFindings'),
@@ -141,11 +146,21 @@ function bindEvents() {
   });
 
   els.profileQuickBtn.addEventListener('click', () => {
-    els.authPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    const target = state.session ? els.profileName : els.authEmail;
-    if (target) {
-      target.setAttribute('tabindex', '-1');
-      target.focus();
+    toggleProfileMenu();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!state.profileMenuOpen) return;
+    const clickedInsideMenu = event.target.closest('.profile-menu');
+    if (!clickedInsideMenu) {
+      toggleProfileMenu(false);
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.profileMenuOpen) {
+      toggleProfileMenu(false);
+      els.profileQuickBtn.focus();
     }
   });
 
@@ -232,17 +247,21 @@ async function updateAuthUi() {
 
   els.signedOutState.classList.toggle('hidden', connected);
   els.signedInState.classList.toggle('hidden', !connected);
-  els.authTitle.textContent = connected ? 'Workspace connected' : 'Secure sign in';
+  els.authTitle.textContent = connected ? 'Account connected' : 'Secure sign in';
   els.authCopy.textContent = connected
     ? 'Your reports, history, and Dr.AI conversations are tied to your secure account.'
     : 'Sign in to store reports, sync your history, and continue conversations with Dr.AI.';
   els.authStatusBadge.textContent = connected ? 'Connected' : state.supabase ? 'Ready' : 'Offline ready';
+  els.profileQuickAvatar.classList.toggle('hidden', !connected);
+  els.profileQuickBtn.querySelector('.nav-icon').classList.toggle('hidden', connected);
 
   if (connected) {
     const displayName = state.user.user_metadata?.full_name || state.user.email?.split('@')[0] || 'MedInsight user';
+    const shortName = initials(displayName);
     els.profileName.textContent = displayName;
     els.profileEmail.textContent = state.user.email || 'Authenticated user';
-    els.profileAvatar.textContent = initials(displayName);
+    els.profileAvatar.textContent = shortName;
+    els.profileQuickAvatar.textContent = shortName;
   }
 
   els.authForm.classList.toggle('hidden', connected);
@@ -277,6 +296,7 @@ async function submitAuthForm(event) {
   if (!signInAttempt.error) {
     setButtonBusy(els.authSubmitBtn, false, 'Sign in / Sign up');
     showToast('Signed in successfully.');
+    toggleProfileMenu(false);
     return;
   }
 
@@ -294,6 +314,7 @@ async function submitAuthForm(event) {
 async function signOut() {
   if (!state.supabase) return;
   await state.supabase.auth.signOut();
+  toggleProfileMenu(false);
   state.reports = [];
   state.selectedReport = null;
   state.chatMessages = [];
@@ -562,9 +583,49 @@ async function resolveReportLink(storagePath) {
 }
 
 function renderFindings(summary) {
-  renderList(els.criticalFindings, summary.critical || ['No critical findings noted.']);
-  renderList(els.moderateFindings, summary.moderate || ['No moderate findings noted.']);
-  renderList(els.elevatedFindings, summary.elevated || ['No elevated findings noted.']);
+  els.analysisOverview.innerHTML = buildAnalysisNarrative(summary);
+}
+
+function buildAnalysisNarrative(summary = {}) {
+  const sections = [];
+  const overview = String(summary.overview || '').trim();
+  const critical = normalizeFindings(summary.critical);
+  const moderate = normalizeFindings(summary.moderate);
+  const elevated = normalizeFindings(summary.elevated);
+
+  sections.push(`<p>${escapeHtml(overview || 'No report summary is available yet. Upload a report to receive a readable AI explanation of the main findings and what they may mean.')}</p>`);
+
+  if (critical.length) {
+    sections.push(`<p><strong>Priority findings:</strong> ${escapeHtml(joinReadableList(critical))}.</p>`);
+  }
+
+  if (moderate.length) {
+    sections.push(`<p><strong>Additional findings to review:</strong> ${escapeHtml(joinReadableList(moderate))}.</p>`);
+  }
+
+  if (elevated.length) {
+    sections.push(`<p><strong>Markers to monitor:</strong> ${escapeHtml(joinReadableList(elevated))}.</p>`);
+  }
+
+  if (!critical.length && !moderate.length && !elevated.length) {
+    sections.push('<p>The detailed findings will appear here after analysis, rewritten into a single patient-friendly explanation instead of separate columns.</p>');
+  }
+
+  return sections.join('');
+}
+
+function normalizeFindings(items) {
+  return (items || [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .filter((item) => !/^no\s+/i.test(item) && !/await/i.test(item) && !/upload a report/i.test(item));
+}
+
+function joinReadableList(items) {
+  if (!items.length) return '';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
 function renderList(element, items) {
@@ -586,6 +647,7 @@ function renderMetrics(metrics, target) {
     .map((metric) => {
       const severity = metric.severity || 'moderate';
       const metricName = metric.metric_name || metric.name;
+      const referenceRange = getReferenceRange(metricName, metric.unit);
       return `
         <article class="metric-item" tabindex="0" data-severity="${escapeHtml(severity)}">
           <div class="metric-tip">${escapeHtml(metric.tip || 'No balancing tip available for this metric yet.')}</div>
@@ -597,6 +659,7 @@ function renderMetrics(metrics, target) {
             </div>
             <span class="metric-value">${escapeHtml(String(metric.value ?? '--'))} ${escapeHtml(metric.unit || '')}</span>
           </header>
+          <p class="metric-range">Reference range: ${escapeHtml(referenceRange)}</p>
           <div class="metric-footer">
             <span class="status-pill">${escapeHtml(readableStatus(severity))}</span>
           </div>
@@ -801,6 +864,7 @@ async function submitChatMessage(event) {
 }
 
 function switchView(viewName) {
+  toggleProfileMenu(false);
   document.querySelectorAll('.view').forEach((view) => {
     view.classList.toggle('active', view.dataset.view === viewName);
   });
@@ -811,6 +875,20 @@ function switchView(viewName) {
   if (activeView) {
     activeView.setAttribute('tabindex', '-1');
     activeView.focus();
+  }
+}
+
+function toggleProfileMenu(force) {
+  state.profileMenuOpen = typeof force === 'boolean' ? force : !state.profileMenuOpen;
+  els.profileMenuPanel.classList.toggle('hidden', !state.profileMenuOpen);
+  els.profileQuickBtn.setAttribute('aria-expanded', String(state.profileMenuOpen));
+
+  if (!state.profileMenuOpen) return;
+
+  const target = state.session ? els.profileName : els.authEmail;
+  if (target) {
+    target.setAttribute('tabindex', '-1');
+    target.focus();
   }
 }
 
@@ -855,6 +933,19 @@ function readableStatus(value) {
   return String(value || '')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getReferenceRange(metricName, unit) {
+  const label = String(metricName || '').toLowerCase();
+  if (label.includes('hemoglobin')) return '12-16 g/dL';
+  if (label.includes('glucose')) return '70-99 mg/dL fasting';
+  if (label.includes('cholesterol')) return 'Below 200 mg/dL';
+  if (label.includes('ldl')) return 'Below 100 mg/dL';
+  if (label.includes('hdl')) return '40 mg/dL or higher';
+  if (label.includes('vitamin d')) return '30-100 ng/mL';
+  if (label.includes('creatinine')) return '0.6-1.3 mg/dL';
+  if (label.includes('tsh')) return '0.4-4.0 uIU/mL';
+  return unit ? `See lab-specific normal range (${unit})` : 'See lab-specific normal range';
 }
 
 function initials(name) {

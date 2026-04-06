@@ -76,6 +76,7 @@ export default async function handler(req, res) {
       .update({
         analysis_status: 'completed',
         summary_json: {
+          overview: analysis.overview || '',
           critical: analysis.critical || [],
           moderate: analysis.moderate || [],
           elevated: analysis.elevated || []
@@ -94,7 +95,9 @@ async function generateAiAnalysis(fileName, extracted) {
   const client = createGeminiClient();
   const prompt = [
     'You analyze medical reports and return strict JSON only.',
-    'Do not diagnose. Keep tips practical and concise. If uncertain, say so plainly.',
+    'Do not present a definitive diagnosis. Use cautious medical language such as likely, may suggest, can be associated with, or is consistent with.',
+    'Write overview as a detailed 4-6 sentence summary describing the main abnormalities, what the patient may be suffering from based on the report, which body systems appear affected, and what symptoms can be associated with those findings. Make clear that symptom interpretation is based on report findings and should be clinically confirmed.',
+    'Keep metric tips practical and concise. If uncertain, say so plainly.',
     `File name: ${fileName}`,
     extracted.text ? `Report text:\n${extracted.text.slice(0, 12000)}` : 'No extractable text was available.'
   ].join('\n\n');
